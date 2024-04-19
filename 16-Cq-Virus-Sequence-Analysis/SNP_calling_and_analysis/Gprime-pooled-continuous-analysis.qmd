@@ -1,0 +1,312 @@
+---
+title: "Gprime-pooled-continuous-analysis"
+format: gfm
+editor: visual
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(dpi=300,fig.width=7)
+```
+
+Load packages
+
+```{r}
+#install.packages("devtools")
+#devtools::install_github("bmansfeld/QTLseqr")
+# install.packages("vcfR")
+#install.packages("SNPfiltR")
+library(SNPfiltR)
+library(QTLseqr)
+library(ggplot2)
+library(vcfR)
+library(dplyr)
+```
+
+#### Load in dataset
+
+```{r}
+# read in vcf
+DiNV_vcf <- read.vcfR("~/Desktop/KU/sequences/16Cq-DiNV-Test/freebayes/continuous-DiNV.vcf")
+
+# filter vcf to remove sites (SNPs) with more than two alleles present (from SNPfiltR package)
+DiNV_vcf <- filter_biallelic(DiNV_vcf)
+
+
+# extract the number of reads supporting the reference allele for each sample at each SNP 
+# DiNV_vcf has a column containing RO or reference allele information
+# the extract.gt function will subset from that column
+# the same column contains a lot of other information separated by : and , which is why a specific function is needed 
+ref <- as.data.frame(extract.gt(DiNV_vcf, element = "RO"))
+# extract the number of reads supporting the alternate allele for each sample at each SNP 
+# AO is alternate allele
+# because I removed all SNPs that are more than biallelic, there should only be 1 alternate allele
+alt <- as.data.frame(extract.gt(DiNV_vcf, element = "AO"))
+# ref and alt are just SNPs and the number of reads
+# But I want to also add other information with these, like what are the actual bases for the alleles, and have a column for the position 
+# that information is in the fix portion of the vcf file, which is hard to look at 
+# check what it looks like by naming it and looking at it 
+x<-DiNV_vcf@fix
+# after looking at x, I can see that the columns I want are 1: chromosome, 2: position, 4: reference allele, and 5: alternate allele
+# subset out those columns 
+DiNV_SNPs<-as.data.frame(DiNV_vcf@fix[,c(1,2,4,5)])
+# add the read counts supporting the reference and alternate alleles for each of the two sequenced strains as their own columns
+DiNV_SNPs$inn.ref<-ref$INN
+DiNV_SNPs$inn.alt<-alt$INN
+DiNV_SNPs$vir.ref<-ref$VIR
+DiNV_SNPs$vir.alt<-alt$VIR
+
+# there might be some missing data in this file, which would come out as rows where either inn or vir have an NA for alleles 
+# remove any rows that have an NA 
+DiNV_SNPs <- na.omit(DiNV_SNPs)
+
+# additionally, the position needs to be read as a number by R
+# turn it into numeric
+head(DiNV_SNPs) # check numbers before
+DiNV_SNPs$POS <- as.numeric(DiNV_SNPs$POS)
+head(DiNV_SNPs) # check to make sure numbers stay the same, sometimes as.numeric can change numbers
+
+```
+
+#### Prepare SNP dataset for Gprime format. Based off of QTLSeqr program.
+
+```{r}
+# what I need is columns that say:
+# chrom, position, ref base, alt base, and allele counts per sample
+# but the allele counts have to be named AD_ALT.sample or AD_REF.sample 
+# so I need AD_ALT.inn, AD_REF.inn, AD_ALT.vir, and AD_REF.vir
+
+colnames(DiNV_SNPs)[5] ="AD_REF.inn"
+colnames(DiNV_SNPs)[6] ="AD_ALT.inn"
+colnames(DiNV_SNPs)[7] ="AD_REF.vir"
+colnames(DiNV_SNPs)[8] ="AD_ALT.vir"
+
+head(DiNV_SNPs)
+# looks good so far
+
+# save this as a csv because the program doesn't seem to want it in R 
+write.csv(DiNV_SNPs, file = "~/Desktop/KU/sequences/16Cq-DiNV-Test/freebayes/DiNV_SNPs_For_Gprime.csv", row.names = FALSE)
+
+```
+
+#### More preparing the table and loading in
+
+```{r}
+# vignette says "We define the sample name for each of the bulks."
+# from what I can tell, a bulk is a pooled sample or a bulked sample
+# for whatever reason this program calls them a high bulk and a low bulk 
+# but I'm not sure what those terms mean 
+
+# naming the samples exactly what it says after AD_REF. 
+# also want to 
+HighBulk <- "inn"
+LowBulk <- "vir"
+# assuming this is the way they want to represent chromosomes
+# they usually want you to specify which chromosomes to use
+# because there is just one it doesn't matter probably 
+Chroms <- "NC_040699.1"
+
+# see if importing the table works 
+Gprime_df <- importFromTable(file = "~/Desktop/KU/sequences/16Cq-DiNV-Test/freebayes/DiNV_SNPs_For_Gprime.csv",
+                      highBulk = HighBulk,
+                      lowBulk = LowBulk,
+                      chromList = Chroms)
+
+# for whatever reason it renamed my columns, so I will just have to remember that high is innubila cells and low is virilis cells
+```
+
+The import from table function has added in some columns. They mean:
+
+-   GQ.HIGH - The genotype quality score, (how confident we are in the genotyping)
+-   SNPindex.HIGH - The calculated SNP-index for the high bulk. SNP index is alternate allele depth over total read depth
+-   Same as above for the low bulk
+-   REF_FRQ - reference allele depth for both samples divided by total read depth for both samples
+-   deltaSNP - The change in SNP index, high bulk index minus low bulk index
+
+#### Looking at SNPs to get an idea for filtering
+
+"QTLseqr offers some options for filtering that may help reduce noise and improve results. Filtering is mainly based on read depth for each SNP, such that we can try to eliminate SNPs with low confidence, due to low coverage, and SNPs that may be in repetitive regions and thus have inflated read depth. You can also filter based on the absolute difference in read depth between the bulks."
+
+```{r}
+#One way to assess filtering thresholds and check the quality of our data is by plotting histograms of the read depths. We can get an idea of where to draw our thresholds
+
+# total read depth histogram:
+
+ggplot(data = Gprime_df) + 
+    geom_histogram(aes(x = DP.HIGH + DP.LOW), bins = 50) + 
+    xlim(0,500)
+
+# total reference allele frequency:
+ggplot(data = Gprime_df) +
+    geom_histogram(aes(x = REF_FRQ), bins = 50)
+
+# this one looks different than their example, their ref_frq was centered around 0.5... but maybe their data is really different. This looks like the vast majority of the SNPs are reference allele? Not sure exactly what that means...
+
+
+# We can plot our per-bulk SNP-index to check if our data is good.We expect to find two small peaks on each end and most of the SNPs should be approximiately normally distributed arround 0.5 in an F2 population. Here is the HIGH bulk for example:
+
+# for innubila sample
+ggplot(data = Gprime_df) +
+    geom_histogram(aes(x = SNPindex.HIGH, bins = 50))
+
+# for vir sample
+ggplot(data = Gprime_df) +
+    geom_histogram(aes(x = SNPindex.LOW), bins = 50)
+
+# this is not an F2 population (not even possible with our virus) so this is maybe why these don't look as expected 
+
+```
+
+#### Filtering SNPs
+
+"Now that we have an idea about our read depth distribution we can filter out low confidence SNPS. In general we recommend filtering extremely low and high coverage SNPs, either in both bulks (`minTotalDepth/maxTotalDepth`) and/or in each bulk separately (`minSampleDepth`). We have the option to filter based on reference allele frequency (`refAlleleFreq`), this removes SNPs that for some reason are over- or under-represented in *BOTH* bulks. We can also filter SNPs that have large discrepancies in read depth between the bulks(i.e. one bulk has a depth of 500 and the other has 5). Such discrepancies can throw off the G statistic. We can also use the GATK GQ score (Genotype Quality) to filter out low confidence SNPs. If the `verbose` parameter is set to `TRUE` (default) the function will report the numbers of SNPs filtered in each step."
+
+Additionally I added a minor allele count filter
+
+```{r}
+
+# First filter for minor allele count 
+# first determine which allele is minor
+# by comparing the sum of the reference and sum of the alternates
+# whichever is smaller is minor 
+# and then if the minor is less than 2 reads
+# get rid of that row 
+
+# empty vector for positions of SNPs to remove
+POS_to_remove <- c()
+
+for ( i in 1:nrow(Gprime_df)) {
+  if (Gprime_df$AD_ALT.LOW[i] + Gprime_df$AD_ALT.HIGH[i] <= Gprime_df$AD_REF.HIGH[i] + Gprime_df$AD_REF.LOW[i] & 
+      Gprime_df$AD_ALT.LOW[i] + Gprime_df$AD_ALT.HIGH[i] <= 2) {
+    POS_to_remove[i] <- 1
+  }
+  else if (Gprime_df$AD_REF.LOW[i] + Gprime_df$AD_REF.HIGH[i] <= Gprime_df$AD_ALT.HIGH[i] + Gprime_df$AD_ALT.LOW[i] & 
+      Gprime_df$AD_REF.LOW[i] + Gprime_df$AD_REF.HIGH[i] <= 2) {
+    POS_to_remove[i] <- 1
+  }
+
+  else {POS_to_remove[i] <- 0 }
+}
+
+# how many get removed 
+table(POS_to_remove)
+# 9747 to remove 
+
+# keep all rows where minor allele depth is more than 2 (aka was coded 0)
+trimmed_Gprime_df <- Gprime_df[POS_to_remove == 0,]
+
+
+
+# use the filtering snps 
+# minimum depth should probably be 10? This is total so both samples, basically same as min sample depth
+# max depth of 200? not sure 
+# don't have GATK score so not filtering by that 
+# min coverage per sample of 5 reads, seems pretty low but there are inn samples that I'm sure have few reads 
+# for refAlleleFreq this is keeping all SNPs with a REF_FRQ between 0.05 and 0.95
+ 
+
+Gprime_df_filt <-
+    filterSNPs(
+        SNPset = trimmed_Gprime_df,
+        refAlleleFreq = 0.05,
+        minTotalDepth = 10,
+        maxTotalDepth = 200, 
+        minSampleDepth = 5,
+        verbose = TRUE
+    )
+
+```
+
+#### Running G prime analysis
+
+```{r}
+
+# use Hampel method for outlier filter 
+Gprime_df_filt_prime <- runGprimeAnalysis(Gprime_df_filt,
+    windowSize = 2000,
+    outlierFilter = "Hampel",
+    filterThreshold = 0.1)
+
+# there are some errors with this, but I will continue anyways 
+
+
+#Due to the fact that p-values are estimated from the null distribution of G', an important check is to see if the null distribution of G' values is close to log normally distributed. For this purpose we use the `plotGprimeDist` function, which plots the G' histograms of both raw and filtered G' sets alongside the log-normal null distribution (which is reported in the legend). We can also use this to test which filtering method (Hampel or DeltaSNP) estimates a more accurate null distribution. If you use the `"deltaSNP"` method plotting G' distributions with different filter thresholds might also help reveal a better G' null distribution. 
+
+# Hampel method
+plotGprimeDist(SNPset = Gprime_df_filt_prime, outlierFilter = "Hampel")
+# deltaSNP method 
+plotGprimeDist(SNPset = Gprime_df_filt_prime, outlierFilter = "deltaSNP", filterThreshold = 0.1)
+
+# The hampel method looks most like a log normal distribution
+
+# plot number of SNPs in a window
+p1 <- plotQTLStats(SNPset = Gprime_df_filt_prime, var = "nSNPs")
+p1
+
+# plot the G' statistic
+# try to plot the threshold can pass the FDR (q) of 0.01.
+p3 <- plotQTLStats(SNPset = Gprime_df_filt_prime, var = "Gprime", plotThreshold = TRUE, q = 0.01)
+
+#plot
+p3
+
+# visualize with neg log ten p-value instead
+QTLplots <- plotQTLStats(
+    SNPset = Gprime_df_filt_prime, 
+    var = "negLog10Pval", 
+    plotThreshold = TRUE, 
+    q = 0.01, 
+    )
+QTLplots
+
+```
+From this, I feel confident about the SNPs put into the program, so I think these 2 maybe 3 "QTLs" are accurate
+
+
+#### Extracting peak data
+
+```{r}
+# generate a list of datasets with each QTL
+QTL <- getSigRegions(SNPset = Gprime_df_filt_prime, alpha = 0.01)
+# there are 3 QTLs
+# make into dfs
+QTL1 <- QTL[[1]]
+QTL2 <- QTL[[2]]
+QTL3 <- QTL[[3]]
+
+# combine the df
+QTLS <- rbind(QTL1, QTL2, QTL3)
+# 16 significant SNPs 
+QTLS
+```
+
+#### Plot scatter plot of negative log p-values 
+
+```{r}
+# another way of visualizing the data
+ggplot(Gprime_df_filt_prime, aes(x=POS, y=negLog10Pval))+
+  geom_point()+
+  theme_classic() + xlab("Position") + ylab("Negative log10 p-value")
+```
+
+#### Plot G prime statistic as scatter plot
+
+```{r}
+# another way of visualizing the data
+# tried adding the FDR line, I'm not sure the value but it seemed like it was at 67 in the Gprime plot from the function? 
+# I just really hate the grey background in that plot
+# but the smooth lines are nice 
+# IDK best way to visualize this 
+
+ggplot(Gprime_df_filt_prime, aes(x=POS, y=Gprime))+
+  geom_point()+
+  theme_classic() + xlab("Position") + ylab("G'") +
+   geom_hline(yintercept = 67, color="deeppink")
+```
+
+
+save filtered dataset from From this analysis, want to use it for Fisher's exact test, as well as save the list of SNPs found in the QTLs
+```{r}
+#write.csv(Gprime_df_filt, "~/Desktop/KU/sequences/16Cq-DiNV-Test/freebayes/Gprime_df_filt.csv")
+#write.csv(QTLS, "~/Desktop/KU/sequences/16Cq-DiNV-Test/freebayes/QTL_SNPs.csv")
+```
+
