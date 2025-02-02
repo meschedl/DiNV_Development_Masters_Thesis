@@ -191,3 +191,27 @@ exp((559.9158 - 566.6194)/2)
 # 0.03502126 
 # So this would suggest that there is a significant difference in the AIC between the two models, and with AIC the lower number is the best one, indicating that the model that uses block + treatment is the best model
 ```
+
+Changing figure colors and lines for paper 
+
+
+```{r}
+df_fit2<- survfit(Surv(dead, status) ~ treatment, data=df.convert)
+
+
+ggsurvplot(df_fit2, size = 3,
+          pval = FALSE, conf.int = FALSE,
+          ggtheme = theme_light(), # Change ggplot2 theme
+          font.tickslab = c(14),
+          legend = "bottom",
+          font.x = c(16),
+          font.y = c(16),
+          font.t = c(16),
+          title = expression(paste("Male",italic(" D. innubila "), "Injected with 16Cq DiNV")),
+          legend.title="Treatment",
+          legend.labs=c("Cell culture medium", "16Cq DiNV"),
+          font.legend = c(14),
+          palette = c("#009E73", "#D55E00")) + ylab("Survival Proporation") + xlab("Days post injection") 
+```
+
+
