@@ -1053,7 +1053,7 @@ ggplot(Female_delta_delta, aes(y= delta_delta_Cq_2, x=day)) + geom_boxplot(outli
 
 ![](p4-DiNV-viral-dilutions-over-time_files/figure-commonmark/unnamed-chunk-26-1.png)
 
-Males
+Males delta delta color change
 
 ``` r
 legend_title <- "Virus Delivery"
@@ -1072,3 +1072,43 @@ ggplot(Male_delta_delta, aes(y= delta_delta_Cq_2, x=day)) + geom_boxplot(outlier
     `binwidth`.
 
 ![](p4-DiNV-viral-dilutions-over-time_files/figure-commonmark/unnamed-chunk-27-1.png)
+
+Female one delta
+
+``` r
+ledgend_title = "Virus Delivery"
+ggplot(Cq_values_F_Delta, aes(y= delta_Cq_2, x=day)) +
+  geom_boxplot(outlier.shape=NA, aes(fill=dilution))  + 
+  theme_light() + scale_fill_manual(ledgend_title, values=c("#648FFF", "#DC267F", "#FFB000")) + 
+  geom_dotplot(aes(fill=dilution), binaxis='y', stackdir='center', dotsize=0.6, position=position_dodge(0.8)) + 
+  scale_y_continuous(trans='log10', breaks=trans_breaks('log10', function(x) 10^x), labels=trans_format('log10', math_format(10^.x))) + 
+  theme(axis.text=element_text(size=12),axis.title=element_text(size=14), legend.text=element_text(size=6), legend.title=element_text(size=7)) +
+  scale_x_discrete(labels=c("day0" = "0 days", "day1" = "1 day", "day3" = "3 days", "day5" = "5 days")) + 
+  labs(title = "Comparing Viral Load in Female _D. innubila_ Across Early Infection",y = "Relative amount of DiNV genome to host genome", x = "Days Post Injection") +
+  theme(legend.position = c(0.93, 0.15), legend.background = element_rect(linetype="solid", colour ="black"),plot.title = element_markdown())
+```
+
+    Bin width defaults to 1/30 of the range of the data. Pick better value with
+    `binwidth`.
+
+![](p4-DiNV-viral-dilutions-over-time_files/figure-commonmark/unnamed-chunk-28-1.png)
+
+Male one delta
+
+``` r
+ggplot(Cq_values_M_Delta, aes(y= delta_Cq_2, x=day)) +
+  geom_boxplot(outlier.shape=NA, aes(fill=dilution))  + 
+  theme_light() + scale_fill_manual(ledgend_title, values=c("#648FFF", "#DC267F", "#FFB000")) + 
+  geom_dotplot(aes(fill=dilution), binaxis='y', stackdir='center', dotsize=0.6, position=position_dodge(0.8)) + 
+  scale_y_continuous(trans='log10', breaks=trans_breaks('log10', function(x) 10^x), labels=trans_format('log10', math_format(10^.x))) + 
+  theme(axis.text=element_text(size=12),axis.title=element_text(size=14), legend.text=element_text(size=6), legend.title=element_text(size=7)) +
+  scale_x_discrete(labels=c("day0" = "0 days", "day1" = "1 day", "day3" = "3 days", "day5" = "5 days")) + 
+  labs(title = expression("Comparing Viral Load in Male _D. innubila_ Across Early Infection"),y = "Relative amount of DiNV genome to host genome", x = "Days Post Injection") +
+  theme(legend.position = "none",
+        plot.title = element_markdown())
+```
+
+    Bin width defaults to 1/30 of the range of the data. Pick better value with
+    `binwidth`.
+
+![](p4-DiNV-viral-dilutions-over-time_files/figure-commonmark/unnamed-chunk-29-1.png)
