@@ -198,3 +198,25 @@ df.convert_010 <- df.convert_010[which(df.convert_010$numeric.dilution != 1),]
 df7_fit<- coxph(Surv(dead, status) ~ numeric.dilution + Block, data=df.convert_010)
 summary(df7_fit)
 ```
+
+
+Change color palette and lines for paper 
+
+```{r}
+df_fit<- survfit(Surv(dead, status) ~ treatment, data=df.convert)
+ggsurvplot(df_fit, size = 2.5,
+          pval = FALSE, conf.int = FALSE,
+          legend = "bottom",
+          font.tickslab = c(14),
+          font.x = c(16),
+          font.y = c(16),
+          ggtheme = theme_light(),
+          title = expression(paste("Male",italic(" D. innubila "), "Injected with Dilutions Middle Band DiNV")),
+          legend.title="Treatment",
+          legend.labs=c("CCM", "0.01 FFU", "0.05 FFU", "1 FFU", "3 FFU"),
+          font.legend = c(14),
+          palette = c("#009E73", "#648FFF","#FEFE62","#DC267F","#FE6100")) + ylab("Survival Proporation") + xlab("Days post injection")
+```
+
+
+

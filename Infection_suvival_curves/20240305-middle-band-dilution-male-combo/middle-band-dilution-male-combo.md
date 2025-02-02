@@ -359,3 +359,23 @@ summary(df7_fit)
     Likelihood ratio test= 10.88  on 2 df,   p=0.004
     Wald test            = 7.85  on 2 df,   p=0.02
     Score (logrank) test = 10.11  on 2 df,   p=0.006
+
+Change color palette and lines for paper
+
+``` r
+df_fit<- survfit(Surv(dead, status) ~ treatment, data=df.convert)
+ggsurvplot(df_fit, size = 2.5,
+          pval = FALSE, conf.int = FALSE,
+          legend = "bottom",
+          font.tickslab = c(14),
+          font.x = c(16),
+          font.y = c(16),
+          ggtheme = theme_light(),
+          title = expression(paste("Male",italic(" D. innubila "), "Injected with Dilutions Middle Band DiNV")),
+          legend.title="Treatment",
+          legend.labs=c("CCM", "0.01 FFU", "0.05 FFU", "1 FFU", "3 FFU"),
+          font.legend = c(14),
+          palette = c("#009E73", "#648FFF","#FEFE62","#DC267F","#FE6100")) + ylab("Survival Proporation") + xlab("Days post injection")
+```
+
+![](middle-band-dilution-male-combo_files/figure-commonmark/unnamed-chunk-13-1.png)
