@@ -82,7 +82,7 @@ Cq_values_F_Delta$delta_Cq_2 <- 2^(delta_Cqs_F)
 
 ```
 
-Plot 2\^delta Cq 
+Plot 2\^delta Cq
 
 ```{r}
 ledgend_title = "Virus Delivery"
@@ -140,8 +140,7 @@ Cq_values_M_Delta$delta_Cq_2 <- 2^(delta_Cqs_M)
 
 ```
 
-
-Plot 2\^delta Cq 
+Plot 2\^delta Cq
 
 ```{r}
 ggplot(Cq_values_M_Delta, aes(y= delta_Cq_2, x=day)) +
@@ -224,9 +223,7 @@ Female_delta_delta <- rbind(F_001, F_01, F_3)
 
 ```
 
-
-Doing linear models for statistical tests Female
-use delta delta Cq
+Doing linear models for statistical tests Female use delta delta Cq
 
 ```{r}
 # make a dilution column that is numeric
@@ -255,8 +252,7 @@ female_001_model <- lm(delta_delta_Cq~numeric.day, data = subset(Female_delta_de
 summary(aov(female_001_model))
 ```
 
-
-Plot box plots 
+Plot box plots
 
 ```{r}
 legend_title <- "Virus Delivery"
@@ -336,7 +332,6 @@ M_001$delta_delta_Cq_2 <- 2^(delta_delta_001_M)
 Male_delta_delta <- rbind(M_001, M_01, M_3)
 ```
 
-
 Doing linear models for statistical tests Male
 
 ```{r}
@@ -366,7 +361,7 @@ Male_001_model <- lm(delta_delta_Cq~numeric.day, data = subset(Male_delta_delta,
 summary(aov(Male_001_model))
 ```
 
-Plot box plots 
+Plot box plots
 
 ```{r}
 legend_title <- "Virus Delivery"
@@ -488,8 +483,6 @@ ggplot(FFU_001_dil, aes(y= delta_delta_Cq_2, x=day, fill=sex)) +
   theme(legend.position = "none") +
   labs(title = "Comparing DiNV Increase in Male and Female Flies \nInjected with 0.01 FFU DiNV Over Early Infection",y = "Relative DiNV Genome Increase", x = "Days Post Injection")
 ```
-
-
 
 **Adding in days 6, 7, and 9 for males** Not sure if I will include this, I don't feel comfortable combining two experiments like this and there were larger differences in the day 0 PIF 3 Cqs than I would have expected
 
