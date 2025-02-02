@@ -795,3 +795,47 @@ summary(df_lowdils_fitns)
     Likelihood ratio test= 13.56  on 4 df,   p=0.009
     Wald test            = 12.43  on 4 df,   p=0.01
     Score (logrank) test = 13.17  on 4 df,   p=0.01
+
+Changing color pallet and lines for paper
+
+Female
+
+``` r
+df_fit_fem<- survfit(Surv(dead, status) ~ dilution, data=df.convert_fem)
+ggsurvplot(df_fit_fem, size = 2.5,
+          pval = FALSE, conf.int = FALSE,
+          legend = "bottom",
+          font.tickslab = c(14),
+          font.x = c(16),
+          font.y = c(16),
+          font.t = c(16),
+          ggtheme = theme_light(),
+          title = expression(paste("Female",italic(" D. innubila "), "Injected with Dilutions of Passage 4 DiNV")),
+          legend.title="Treatment",
+          legend.labs=c("CCM", "0.01 FFU", "0.1 FFU", "1 FFU", "3 FFU", "6 FFU"),
+          font.legend = c(14),
+          palette = c("#009E73", "#648FFF","#785EF0","#DC267F" ,"#FE6100", "#FFB000")) + ylab("Survival Proporation") + xlab("Days post injection")
+```
+
+![](p4-dilutions-4-rep-combo_files/figure-commonmark/unnamed-chunk-18-1.png)
+
+Male
+
+``` r
+df_fit_m<- survfit(Surv(dead, status) ~ dilution, data=df.convert_m)
+ggsurvplot(df_fit_m, size = 2.5,
+          pval = FALSE, conf.int = FALSE,
+          legend = "bottom",
+          font.tickslab = c(14),
+          font.x = c(16),
+          font.y = c(16),
+          font.t = c(16),
+          ggtheme = theme_light(),
+          title = expression(paste("Male",italic(" D. innubila "), "Injected with Dilutions of Passage 4 DiNV")),
+          legend.title="Treatment",
+          legend.labs=c("CCM", "0.01 FFU", "0.1 FFU", "1 FFU", "3 FFU", "6 FFU"),
+          font.legend = c(14),
+          palette = c("#009E73", "#648FFF","#785EF0","#DC267F" ,"#FE6100", "#FFB000")) + ylab("Survival Proporation") + xlab("Days post injection")
+```
+
+![](p4-dilutions-4-rep-combo_files/figure-commonmark/unnamed-chunk-19-1.png)
