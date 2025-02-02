@@ -1030,3 +1030,45 @@ Combine this data with the male data from the other experiment
   #scale_x_discrete(labels=c("day1" = "1 day", "day3" = "3 days", "day5" = "5 days", "day6" = "6 days", "day7" = "7 days", "day9" = "9 days")) +
   #labs(title = "Comparing Viral Titer in Male Flies \nInjected with Various Titers Over Infection",y = "2^delta delta Cq", x = "Days Since Injection")
 ```
+
+Female delta delta modified for paper figures
+
+changing
+
+``` r
+legend_title <- "Virus Delivery"
+ggplot(Female_delta_delta, aes(y= delta_delta_Cq_2, x=day)) + geom_boxplot(outlier.shape=NA,aes(fill=dilution)) +  
+  scale_fill_manual(legend_title, values=c("#648FFF", "#DC267F", "#FFB000")) + 
+  theme_light() + 
+  geom_dotplot(binaxis='y', stackdir='center', dotsize=0.6, position=position_dodge(0.8),aes(fill=dilution)) + 
+  scale_y_continuous(trans='log10', breaks=trans_breaks('log10', function(x) 10^x), labels=trans_format('log10', math_format(10^.x))) + 
+  theme(axis.text=element_text(size=12),axis.title=element_text(size=14), legend.text=element_text(size=10), legend.title=element_text(size=11)) +
+  scale_x_discrete(labels=c("day1" = "1 day", "day3" = "3 days", "day5" = "5 days")) +
+  labs(title = "Comparing DiNV Increase in Female Flies \nInjected with Various Titers Over Early Infection",y = "Relative DiNV Genome Increase", x = "Days Post Injection") +
+  theme(legend.position = c(0.9, 0.15), legend.background = element_rect(linetype="solid", colour ="black")) 
+```
+
+    Bin width defaults to 1/30 of the range of the data. Pick better value with
+    `binwidth`.
+
+![](p4-DiNV-viral-dilutions-over-time_files/figure-commonmark/unnamed-chunk-26-1.png)
+
+Males
+
+``` r
+legend_title <- "Virus Delivery"
+ggplot(Male_delta_delta, aes(y= delta_delta_Cq_2, x=day)) + geom_boxplot(outlier.shape=NA,aes(fill=dilution)) +  
+  scale_fill_manual(legend_title, values=c("#648FFF", "#DC267F", "#FFB000")) + 
+  theme_light() + 
+  geom_dotplot(binaxis='y', stackdir='center', dotsize=0.6, position=position_dodge(0.8),aes(fill=dilution)) + 
+  scale_y_continuous(trans='log10', breaks=trans_breaks('log10', function(x) 10^x), labels=trans_format('log10', math_format(10^.x))) + 
+  theme(axis.text=element_text(size=12),axis.title=element_text(size=14), legend.text=element_text(size=10), legend.title=element_text(size=11)) +
+  scale_x_discrete(labels=c("day1" = "1 day", "day3" = "3 days", "day5" = "5 days")) +
+  labs(title = "Comparing DiNV Increase in Male Flies \nInjected with Various Titers Over Early Infection",y = "Relative DiNV Genome Increase", x = "Days Post Injection") +
+  theme(legend.position = "none")
+```
+
+    Bin width defaults to 1/30 of the range of the data. Pick better value with
+    `binwidth`.
+
+![](p4-DiNV-viral-dilutions-over-time_files/figure-commonmark/unnamed-chunk-27-1.png)
